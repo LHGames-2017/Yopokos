@@ -62,6 +62,7 @@ class Tile(object):
         self.Y = y
 
 
+
 class Player(object):
 
     def __init__(self, health, maxHealth, position, houseLocation, score, carriedRessources,
@@ -74,6 +75,11 @@ class Player(object):
         self.CarriedRessources = carriedRessources
         self.CarryingCapacity = carryingCapacity
         self.IsReturningToHouse= False
+
+    def __getstate__(self):
+        state = dict(self.__dict__)
+        del state['IsReturningToHouse']
+        return state
 
     def isInventoryFull(self):
         return self.CarriedRessources >= self.CarryingCapacity;

@@ -13,7 +13,7 @@ mega_map = map_util.MegaMap()
 
 def create_action(action_type, target):
     actionContent = ActionContent(action_type, target.__dict__)
-    return json.dumps(actionContent.__dict__)
+    return json.dumps(actionContent.__dict__), actionContent
 
 
 def create_move_action(target):
@@ -141,11 +141,20 @@ def absToMap(player, pos):
 #     return player.
 
 
+def isWall(deserialized_map, param):
+    blockCoords = Point(int(param["X"]), int(param["Y"]))
+    blockCoords = absToMap(blockCoords)
+    return deserialized_map[blockCoords.X][blockCoords.Y].Content == TileType.Wall;
+
+isTrue = False
+
+
 def bot():
     """
     Main de votre bot.
     """
     global mega_map
+    global isTrue
     map_json = request.form["map"]
 
     # map_json = json.loads(encoded_map)
@@ -162,10 +171,14 @@ def bot():
     pos = p["Position"]
     x = pos["X"]
     y = pos["Y"]
+    isTrue = not isTrue
+    a,_ =  create_move_action(Point(x+1,y) if isTrue else Point(x-1,y))
+    return a;
+
     house = p["HouseLocation"]
     player = Player(p["Health"], p["MaxHealth"], Point(x, y),
                     Point(house["X"], house["Y"]),
-                    0,
+                    p["Score"],
                     p["CarriedResources"], p["CarryingCapacity"])
 
     # Map
@@ -192,21 +205,32 @@ def bot():
     toMine = mineNearest(player, deserialized_map)
     for pt in foundTiles:
         print pt
+    print("Score: {}".format(player.Score))
     print("PlayerPos: {}".format(player.Position))
     print("Resources: {}/{}".format(player.CarriedRessources, player.CarryingCapacity))
+
+    decisionStr, decision = None, None;
+
     if (player.isInventoryFull() or player.IsReturningToHouse):
         mapHouseLocation = absToMap(player, player.HouseLocation)
         shortestMoveToHouse = get_shortest_move_to_resources(npmap, [mapHouseLocation]) - Point(10,
                                                                                                 10) + player.Position
         print "==> Returning to House at {} by going to {}".format(mapHouseLocation, shortestMoveToHouse)
-        return create_move_action(shortestMoveToHouse)
-    if (toMine != None):
+        decisionStr, decision = create_move_action(shortestMoveToHouse)
+    elif (toMine != None):
         # There is something to mine!
         print " ==> Mining %s" % toMine
-        return create_collect_action(toMine)
-    player.Position = get_shortest_move_to_resources(npmap, foundTiles) - Point(10, 10) + player.Position
-    # return decision
-    return create_move_action(Point(player.Position.X, player.Position.Y))
+        decisionStr, decision = create_collect_action(toMine)
+    else:
+        player.Position = get_shortest_move_to_resources(npmap, foundTiles) - Point(10, 10) + player.Position
+        decisionStr, decision = create_move_action(Point(player.Position.X, player.Position.Y))
+
+    if(decision is not None and decision.ActionName == "MoveAction"):
+        #Check the bloc the player is moving to, if it's a wall... break it!
+        if(isWall(deserialized_map, decision.Content)):
+            decisionStr, decision = create_attack_action(decision.Content)
+
+    return decisionStr
 
 
 @app.route("/", methods=["POST"])
@@ -215,9 +239,10 @@ def reponse():
     Point d'entree appelle par le GameServer
     """
     res = bot()
-    print res
+    # print res
     return res
 
 
+
 if __name__ == "__main__":
-    app.run(host="0.0.0.0", port=3000)
+    app.run(host="0.0.0.0", port=8080)
