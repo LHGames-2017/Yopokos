@@ -130,7 +130,7 @@ def mineNearest(player, map):
 
 
 def absToMap(player, pos):
-    return pos - player.Position
+    return pos - player.Position + Point(10,10)
 
 def bot():
     """
@@ -186,8 +186,11 @@ def bot():
         print pt
     print("PlayerPos: {}".format(player.Position))
     print("Resources: {}/{}".format(player.CarriedRessources, player.CarryingCapacity))
-    if(player.isInventoryFull()):
-        return create_move_action(get_move_to(npmap, player.HouseLocation))
+    if(player.isInventoryFull() or player.IsReturningToHouse):
+        mapHouseLocation = absToMap(player, player.HouseLocation)
+        shortestMoveToHouse = get_shortest_move_to_resources(npmap, [mapHouseLocation])  - Point(10, 10) + player.Position
+        print "==> Returning to House at {} by going to {}".format(mapHouseLocation, shortestMoveToHouse)
+        return create_move_action(shortestMoveToHouse)
     if(toMine != None):
         #There is something to mine!
         print " ==> Mining %s"%toMine
