@@ -96,7 +96,7 @@ def get_shortest_move_to_resources(map, target_pos_array):
     paths = []
     for target_pos in target_pos_array:
         paths.append(get_move_to(map, target_pos))
-    if False in paths:
+    while False in paths:
         paths.remove(False)
     min_index, min_value = min(enumerate(paths), key=operator.itemgetter(1))
 
@@ -172,7 +172,7 @@ def bot():
     serialized_map = map_json["CustomSerializedMap"]
     deserialized_map = deserialize_map(serialized_map)
 
-    # print deserialized_map
+
     npmap = map_to_np(deserialized_map)
     # mega_map.update_map(npmap, player.Position)
     printMap(deserialized_map)

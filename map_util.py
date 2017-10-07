@@ -12,9 +12,36 @@ class MegaMap:
     def update_map(self, np_map, player_position):
         # type: (np.ndarray, Point)->None
         if self.base_position is None:
-            base_position = np.array(player_position - Point(10, 10))
-        x = player_position.X - 10
-        y = player_position.Y - 10
+            self.base_position = np.array([
+                player_position.X - 10,
+                player_position.Y - 10
+            ])
+
+        x = player_position.X - self.base_position[0] - 10
+        y = player_position.Y - self.base_position[1] - 10
+
+        if 0 > x:
+            old_map = self.knownMap
+            self.base_position += np.array([-20, 0])
+            self.knownMap = np.zeros((self.knownMap.shape[0] + 20, self.knownMap.shape[1] + 0))
+            np.copyto(self.knownMap[20:,:], old_map)
+        if 0 > y:
+            old_map = self.knownMap
+            self.base_position += np.array([0, -20])
+            self.knownMap = np.zeros((self.knownMap.shape[0] + 0, self.knownMap.shape[1] + 20))
+            np.copyto(self.knownMap[:,20:], old_map)
+        if x >= self.knownMap.shape[0]:
+            old_map = self.knownMap
+            self.base_position += np.array([0, 0])
+            self.knownMap = np.zeros((self.knownMap.shape[0] + 20, self.knownMap.shape[1] + 0))
+            np.copyto(self.knownMap[:-20, :], old_map)
+        if y >= self.knownMap.shape[0]:
+            old_map = self.knownMap
+            self.base_position += np.array([0, 0])
+            self.knownMap = np.zeros((self.knownMap.shape[0] + 0, self.knownMap.shape[1] + 20))
+            np.copyto(self.knownMap[:, :-20], old_map)
+
+
         np.copyto(self.knownMap[x : x + 20, y : y + 20], np_map)
 
     def print_all(self):
