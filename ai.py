@@ -3,6 +3,8 @@ from structs import *
 import json
 import numpy as np
 import sys
+import a_star
+import operator
 
 app = Flask(__name__)
 
@@ -35,7 +37,7 @@ def deserialize_map(serialized_map):
     serialized_map = serialized_map[1:]
     rows = serialized_map.split('[')
     column = rows[0].split('{')
-    deserialized_map = [[Tile() for x in range(20)] for y in range(20)]
+    deserialized_map = [[Tile() for x in xrange(20)] for y in xrange(20)]
     for i in range(len(rows) - 1):
         column = rows[i + 1].split('{')
 
@@ -63,10 +65,33 @@ def printMap(map):
             if tile == TileType.Tile:
                 sys.stdout.write(" ")
             elif tile == TileType.House:
-                sys.stdout.write("O")
+                sys.stdout.write("M")
+            elif tile == TileType.Lava:
+                sys.stdout.write("~")
+            elif tile == TileType.Resource:
+                sys.stdout.write("R")
+            elif tile == TileType.Wall:
+                sys.stdout.write("W")
+            elif tile == TileType.Shop:
+                sys.stdout.write("S")
             else:
                 sys.stdout.write("X")
         print ""
+
+def get_shortest_move_to_resources(map, target_pos_array):
+    # type: (np.ndarray, list(Point))->tuple(int, int)
+    paths = []
+    for target_pos in target_pos_array:
+        paths.append(get_move_to(map, target_pos))
+    min_index, min_value = min(enumerate(paths), key=operator.itemgetter(1))
+
+    return paths[min_index][-1]
+
+
+def get_move_to(map, target_pos):
+    # type: (np.ndarray, Point, Point)->list(tuple(int, int))
+    path = a_star.astar(map, (10, 10), (target_pos.X, target_pos.Y))
+    return path
 
 def bot():
     """
@@ -91,6 +116,7 @@ def bot():
     house = p["HouseLocation"]
     player = Player(p["Health"], p["MaxHealth"], Point(x,y),
                     Point(house["X"], house["Y"]),
+                    0,
                     p["CarriedResources"], p["CarryingCapacity"])
 
     # Map
@@ -98,7 +124,7 @@ def bot():
     deserialized_map = deserialize_map(serialized_map)
 
     #print deserialized_map
-    map = map_to_np(deserialized_map)
+    npmap = map_to_np(deserialized_map)
     printMap(deserialized_map)
 
     otherPlayers = []
@@ -113,8 +139,10 @@ def bot():
 
             otherPlayers.append({player_name: player_info })
     """
+
+    print get_move_to(npmap, Point(18,13))
     # return decision
-    return create_move_action(Point(player.Position.X + 1,player.Position.Y))
+    return create_move_action(Point(player.Position.X,player.Position.Y))
 
 @app.route("/", methods=["POST"])
 def reponse():
