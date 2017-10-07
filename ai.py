@@ -90,13 +90,14 @@ def printMap(map):
 
 
 def get_shortest_move_to_resources(map, target_pos_array):
+
     # type: (np.ndarray, list(Point))->tuple(int, int)
     paths = []
     for target_pos in target_pos_array:
         paths.append(get_move_to(map, target_pos))
     min_index, min_value = min(enumerate(paths), key=operator.itemgetter(1))
 
-    return paths[min_index][-1]
+    return Point(*paths[min_index][-1])
 
 
 def get_move_to(map, target_pos):
@@ -108,7 +109,7 @@ def get_move_to(map, target_pos):
 
 def getResourceTiles(map):
     foundTiles = []
-    for i, tileLine in enumerate(len(map)):
+    for i, tileLine in enumerate(map):
         for j, tile in enumerate(tileLine):
             tileContent = tile.Content
             if tileContent == TileType.Resource:
@@ -165,7 +166,9 @@ def bot():
             otherPlayers.append({player_name: player_info })
     """
 
-    print get_move_to(npmap, Point(18,13))
+    # print get_move_to(npmap, Point(18,13))
+    foundTiles = getResourceTiles(deserialized_map)
+    player.Position = get_shortest_move_to_resources(npmap, foundTiles) - Point(10,10) + player.Position
     # return decision
     return create_move_action(Point(player.Position.X,player.Position.Y))
 
