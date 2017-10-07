@@ -10,6 +10,7 @@ import map_util
 app = Flask(__name__)
 mega_map = map_util.MegaMap()
 
+
 def create_action(action_type, target):
     actionContent = ActionContent(action_type, target.__dict__)
     return json.dumps(actionContent.__dict__)
@@ -121,19 +122,24 @@ def getResourceTiles(map):
 def mineNearest(player, map):
     pY = pX = len(map) / 2;
     if map[pX + 1][pY].Content == TileType.Resource:
-        return Point(pX+1, pY) - Point(10,10) + player.Position
-    elif map[pX -1][pY].Content == TileType.Resource:
-        return Point(pX-1, pY) - Point(10,10) + player.Position
-    elif map[pX][pY+1].Content == TileType.Resource:
-        return Point(pX, pY+1) - Point(10,10) + player.Position
-    elif map[pX][pY-1].Content == TileType.Resource:
-        return Point(pX, pY-1) - Point(10,10) + player.Position
+        return Point(pX + 1, pY) - Point(10, 10) + player.Position
+    elif map[pX - 1][pY].Content == TileType.Resource:
+        return Point(pX - 1, pY) - Point(10, 10) + player.Position
+    elif map[pX][pY + 1].Content == TileType.Resource:
+        return Point(pX, pY + 1) - Point(10, 10) + player.Position
+    elif map[pX][pY - 1].Content == TileType.Resource:
+        return Point(pX, pY - 1) - Point(10, 10) + player.Position
     else:
         return None
 
 
 def absToMap(player, pos):
-    return pos - player.Position + Point(10,10)
+    return pos - player.Position + Point(10, 10)
+
+
+# def checkIfNeedToUpgrade(player):
+#     return player.
+
 
 def bot():
     """
@@ -166,24 +172,20 @@ def bot():
     serialized_map = map_json["CustomSerializedMap"]
     deserialized_map = deserialize_map(serialized_map)
 
-    #print deserialized_map
+    # print deserialized_map
     npmap = map_to_np(deserialized_map)
-    #mega_map.update_map(npmap, player.Position)
+    # mega_map.update_map(npmap, player.Position)
     printMap(deserialized_map)
-    #mega_map.print_all()
+    # mega_map.print_all()
 
     otherPlayers = []
-    """
-    for player_dict in map_json["OtherPlayers"]:
-        for player_name in player_dict.keys():
-            player_info = player_dict[player_name]
-            p_pos = player_info["Position"]
-            player_info = PlayerInfo(player_info["Health"],
-                                     player_info["MaxHealth"],
-                                     Point(p_pos["X"], p_pos["Y"]))
-
-            otherPlayers.append({player_name: player_info })
-    """
+    for players in map_json["OtherPlayers"]:
+        player_info = players["Value"]
+        p_pos = player_info["Position"]
+        player_info = PlayerInfo(player_info["Health"],
+                                 player_info["MaxHealth"],
+                                 Point(p_pos["X"], p_pos["Y"]))
+        otherPlayers.append(player_info)
 
     # print get_move_to(npmap, Point(18,13))
     foundTiles = getResourceTiles(deserialized_map)
@@ -192,14 +194,15 @@ def bot():
         print pt
     print("PlayerPos: {}".format(player.Position))
     print("Resources: {}/{}".format(player.CarriedRessources, player.CarryingCapacity))
-    if(player.isInventoryFull() or player.IsReturningToHouse):
+    if (player.isInventoryFull() or player.IsReturningToHouse):
         mapHouseLocation = absToMap(player, player.HouseLocation)
-        shortestMoveToHouse = get_shortest_move_to_resources(npmap, [mapHouseLocation])  - Point(10, 10) + player.Position
+        shortestMoveToHouse = get_shortest_move_to_resources(npmap, [mapHouseLocation]) - Point(10,
+                                                                                                10) + player.Position
         print "==> Returning to House at {} by going to {}".format(mapHouseLocation, shortestMoveToHouse)
         return create_move_action(shortestMoveToHouse)
-    if(toMine != None):
-        #There is something to mine!
-        print " ==> Mining %s"%toMine
+    if (toMine != None):
+        # There is something to mine!
+        print " ==> Mining %s" % toMine
         return create_collect_action(toMine)
     player.Position = get_shortest_move_to_resources(npmap, foundTiles) - Point(10, 10) + player.Position
     # return decision
