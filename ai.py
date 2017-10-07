@@ -1,7 +1,8 @@
 from flask import Flask, request
 from structs import *
 import json
-import numpy
+import numpy as np
+import sys
 
 app = Flask(__name__)
 
@@ -34,7 +35,7 @@ def deserialize_map(serialized_map):
     serialized_map = serialized_map[1:]
     rows = serialized_map.split('[')
     column = rows[0].split('{')
-    deserialized_map = [[Tile() for x in range(40)] for y in range(40)]
+    deserialized_map = [[Tile() for x in range(20)] for y in range(20)]
     for i in range(len(rows) - 1):
         column = rows[i + 1].split('{')
 
@@ -48,16 +49,41 @@ def deserialize_map(serialized_map):
 
     return deserialized_map
 
+def map_to_np(map):
+    npmap = np.zeros((len(map), len(map[0])))
+    for x, line in enumerate(map):
+        for y, tile in enumerate(line):
+            npmap[x, y] = int(tile.Content)
+    return npmap
+
+def printMap(map):
+    for i in xrange(len(map)):
+        for j in xrange(len(map[i])):
+            tile = map[i][j].Content
+            if tile == TileType.Tile:
+                sys.stdout.write(" ")
+            elif tile == TileType.House:
+                sys.stdout.write("O")
+            else:
+                sys.stdout.write("X")
+        print ""
+
 def bot():
     """
     Main de votre bot.
     """
     map_json = request.form["map"]
 
+    #map_json = json.loads(encoded_map)
+
+    #print map_json
+
+    #return create_move_action(Point(0,1))
+
     # Player info
 
-    encoded_map = map_json.encode()
-    map_json = json.loads(encoded_map)
+    #encoded_map = map_json.encode()
+    map_json = json.loads(map_json)
     p = map_json["Player"]
     pos = p["Position"]
     x = pos["X"]
@@ -71,8 +97,12 @@ def bot():
     serialized_map = map_json["CustomSerializedMap"]
     deserialized_map = deserialize_map(serialized_map)
 
-    otherPlayers = []
+    #print deserialized_map
+    map = map_to_np(deserialized_map)
+    printMap(deserialized_map)
 
+    otherPlayers = []
+    """
     for player_dict in map_json["OtherPlayers"]:
         for player_name in player_dict.keys():
             player_info = player_dict[player_name]
@@ -82,16 +112,18 @@ def bot():
                                      Point(p_pos["X"], p_pos["Y"]))
 
             otherPlayers.append({player_name: player_info })
-
+    """
     # return decision
-    return create_move_action(Point(0,1))
+    return create_move_action(Point(player.Position.X + 1,player.Position.Y))
 
 @app.route("/", methods=["POST"])
 def reponse():
     """
     Point d'entree appelle par le GameServer
     """
-    return bot()
+    res = bot()
+    print res
+    return res
 
 if __name__ == "__main__":
-    app.run(host="0.0.0.0", port=3000)
+    app.run(host="0.0.0.0", port=8080)
