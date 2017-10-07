@@ -171,10 +171,10 @@ def bot():
     pos = p["Position"]
     x = pos["X"]
     y = pos["Y"]
-    isTrue = not isTrue
-    a,_ =  create_move_action(Point(x+1,y) if isTrue else Point(x-1,y))
-    return a;
 
+    isTrue = not isTrue
+    a, _ = create_move_action(Point(x + 1, y) if isTrue else Point(x - 1, y))
+    return a;
     house = p["HouseLocation"]
     player = Player(p["Health"], p["MaxHealth"], Point(x, y),
                     Point(house["X"], house["Y"]),
@@ -245,4 +245,4 @@ def reponse():
 
 
 if __name__ == "__main__":
-    app.run(host="0.0.0.0", port=8080)
+    app.run(host="0.0.0.0", port=3000)
