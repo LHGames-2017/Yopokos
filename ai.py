@@ -157,7 +157,7 @@ def bot():
     # Player info
 
     # encoded_map = map_json.encode()
-    map_json = json.loads(map_json)
+    map_json = json.loads(map_json.encode())
     p = map_json["Player"]
     pos = p["Position"]
     x = pos["X"]
