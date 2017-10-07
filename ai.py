@@ -90,7 +90,6 @@ def printMap(map):
 
 
 def get_shortest_move_to_resources(map, target_pos_array):
-
     # type: (np.ndarray, list(Point))->tuple(int, int)
     paths = []
     for target_pos in target_pos_array:
@@ -106,7 +105,6 @@ def get_move_to(map, target_pos):
     return path
 
 
-
 def getResourceTiles(map):
     foundTiles = []
     for i, tileLine in enumerate(map):
@@ -117,6 +115,22 @@ def getResourceTiles(map):
     return foundTiles
 
 
+def mineNearest(player, map):
+    pY = pX = len(map) / 2;
+    if map[pX + 1][pY].Content == TileType.Resource:
+        return Point(pX+1, pY) - Point(10,10) + player.Position
+    elif map[pX -1][pY].Content == TileType.Resource:
+        return Point(pX-1, pY) - Point(10,10) + player.Position
+    elif map[pX][pY+1].Content == TileType.Resource:
+        return Point(pX, pY+1) - Point(10,10) + player.Position
+    elif map[pX][pY-1].Content == TileType.Resource:
+        return Point(pX, pY-1) - Point(10,10) + player.Position
+    else:
+        return None
+
+
+def absToMap(player, pos):
+    return pos - player.Position
 
 def bot():
     """
@@ -148,8 +162,7 @@ def bot():
     serialized_map = map_json["CustomSerializedMap"]
     deserialized_map = deserialize_map(serialized_map)
 
-
-    #print deserialized_map
+    # print deserialized_map
     npmap = map_to_np(deserialized_map)
     printMap(deserialized_map)
 
@@ -168,9 +181,20 @@ def bot():
 
     # print get_move_to(npmap, Point(18,13))
     foundTiles = getResourceTiles(deserialized_map)
-    player.Position = get_shortest_move_to_resources(npmap, foundTiles) - Point(10,10) + player.Position
+    toMine = mineNearest(player, deserialized_map)
+    for pt in foundTiles:
+        print pt
+    print("PlayerPos: {}".format(player.Position))
+    print("Resources: {}/{}".format(player.CarriedRessources, player.CarryingCapacity))
+    if(player.isInventoryFull()):
+        return create_move_action(get_move_to(npmap, player.HouseLocation))
+    if(toMine != None):
+        #There is something to mine!
+        print " ==> Mining %s"%toMine
+        return create_collect_action(toMine)
+    player.Position = get_shortest_move_to_resources(npmap, foundTiles) - Point(10, 10) + player.Position
     # return decision
-    return create_move_action(Point(player.Position.X,player.Position.Y))
+    return create_move_action(Point(player.Position.X, player.Position.Y))
 
 
 @app.route("/", methods=["POST"])

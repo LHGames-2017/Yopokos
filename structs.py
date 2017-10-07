@@ -69,6 +69,9 @@ class Player(object):
         self.CarriedRessources = carriedRessources
         self.CarryingCapacity = carryingCapacity
 
+    def isInventoryFull(self):
+        return self.CarriedRessources >= self.CarryingCapacity;
+
 
 class PlayerInfo(object):
 
