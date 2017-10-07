@@ -5,9 +5,10 @@ import numpy as np
 import sys
 import a_star
 import operator
+import map_util
 
 app = Flask(__name__)
-
+mega_map = map_util.MegaMap()
 
 def create_action(action_type, target):
     actionContent = ActionContent(action_type, target.__dict__)
@@ -91,21 +92,21 @@ def printMap(map):
 
 def get_shortest_move_to_resources(map, target_pos_array):
 
-    # type: (np.ndarray, list(Point))->tuple(int, int)
+    # type: (np.ndarray, list(Point))->Point
     paths = []
     for target_pos in target_pos_array:
         paths.append(get_move_to(map, target_pos))
+    if False in paths:
+        paths.remove(False)
     min_index, min_value = min(enumerate(paths), key=operator.itemgetter(1))
 
-    return Point(*paths[min_index][-1])
+    return Point(*(paths[min_index][-1]))
 
 
 def get_move_to(map, target_pos):
     # type: (np.ndarray, Point, Point)->list(tuple(int, int))
     path = a_star.astar(map, (10, 10), (target_pos.X, target_pos.Y))
     return path
-
-
 
 def getResourceTiles(map):
     foundTiles = []
@@ -122,6 +123,7 @@ def bot():
     """
     Main de votre bot.
     """
+    global mega_map
     map_json = request.form["map"]
 
     # map_json = json.loads(encoded_map)
@@ -151,7 +153,9 @@ def bot():
 
     #print deserialized_map
     npmap = map_to_np(deserialized_map)
-    printMap(deserialized_map)
+    mega_map.update_map(npmap, player.Position)
+    #printMap(deserialized_map)
+    mega_map.print_all()
 
     otherPlayers = []
     """
