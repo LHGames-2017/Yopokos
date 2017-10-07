@@ -68,6 +68,10 @@ class Player(object):
         self.Score = score
         self.CarriedRessources = carriedRessources
         self.CarryingCapacity = carryingCapacity
+        self.IsReturningToHouse= False
+
+    def isInventoryFull(self):
+        return self.CarriedRessources >= self.CarryingCapacity;
 
 
 class PlayerInfo(object):

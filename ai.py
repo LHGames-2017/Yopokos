@@ -91,7 +91,6 @@ def printMap(map):
 
 
 def get_shortest_move_to_resources(map, target_pos_array):
-
     # type: (np.ndarray, list(Point))->Point
     paths = []
     for target_pos in target_pos_array:
@@ -108,6 +107,7 @@ def get_move_to(map, target_pos):
     path = a_star.astar(map, (10, 10), (target_pos.X, target_pos.Y))
     return path
 
+
 def getResourceTiles(map):
     foundTiles = []
     for i, tileLine in enumerate(map):
@@ -118,6 +118,22 @@ def getResourceTiles(map):
     return foundTiles
 
 
+def mineNearest(player, map):
+    pY = pX = len(map) / 2;
+    if map[pX + 1][pY].Content == TileType.Resource:
+        return Point(pX+1, pY) - Point(10,10) + player.Position
+    elif map[pX -1][pY].Content == TileType.Resource:
+        return Point(pX-1, pY) - Point(10,10) + player.Position
+    elif map[pX][pY+1].Content == TileType.Resource:
+        return Point(pX, pY+1) - Point(10,10) + player.Position
+    elif map[pX][pY-1].Content == TileType.Resource:
+        return Point(pX, pY-1) - Point(10,10) + player.Position
+    else:
+        return None
+
+
+def absToMap(player, pos):
+    return pos - player.Position + Point(10,10)
 
 def bot():
     """
@@ -150,12 +166,11 @@ def bot():
     serialized_map = map_json["CustomSerializedMap"]
     deserialized_map = deserialize_map(serialized_map)
 
-
     #print deserialized_map
     npmap = map_to_np(deserialized_map)
-    mega_map.update_map(npmap, player.Position)
-    #printMap(deserialized_map)
-    mega_map.print_all()
+    #mega_map.update_map(npmap, player.Position)
+    printMap(deserialized_map)
+    #mega_map.print_all()
 
     otherPlayers = []
     """
@@ -172,9 +187,23 @@ def bot():
 
     # print get_move_to(npmap, Point(18,13))
     foundTiles = getResourceTiles(deserialized_map)
-    player.Position = get_shortest_move_to_resources(npmap, foundTiles) - Point(10,10) + player.Position
+    toMine = mineNearest(player, deserialized_map)
+    for pt in foundTiles:
+        print pt
+    print("PlayerPos: {}".format(player.Position))
+    print("Resources: {}/{}".format(player.CarriedRessources, player.CarryingCapacity))
+    if(player.isInventoryFull() or player.IsReturningToHouse):
+        mapHouseLocation = absToMap(player, player.HouseLocation)
+        shortestMoveToHouse = get_shortest_move_to_resources(npmap, [mapHouseLocation])  - Point(10, 10) + player.Position
+        print "==> Returning to House at {} by going to {}".format(mapHouseLocation, shortestMoveToHouse)
+        return create_move_action(shortestMoveToHouse)
+    if(toMine != None):
+        #There is something to mine!
+        print " ==> Mining %s"%toMine
+        return create_collect_action(toMine)
+    player.Position = get_shortest_move_to_resources(npmap, foundTiles) - Point(10, 10) + player.Position
     # return decision
-    return create_move_action(Point(player.Position.X,player.Position.Y))
+    return create_move_action(Point(player.Position.X, player.Position.Y))
 
 
 @app.route("/", methods=["POST"])
