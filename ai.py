@@ -6,27 +6,35 @@ import sys
 
 app = Flask(__name__)
 
+
 def create_action(action_type, target):
     actionContent = ActionContent(action_type, target.__dict__)
     return json.dumps(actionContent.__dict__)
 
+
 def create_move_action(target):
     return create_action("MoveAction", target)
+
 
 def create_attack_action(target):
     return create_action("AttackAction", target)
 
+
 def create_collect_action(target):
     return create_action("CollectAction", target)
+
 
 def create_steal_action(target):
     return create_action("StealAction", target)
 
+
 def create_heal_action():
     return create_action("HealAction", "")
 
+
 def create_purchase_action(item):
     return create_action("PurchaseAction", item)
+
 
 def deserialize_map(serialized_map):
     """
@@ -49,12 +57,14 @@ def deserialize_map(serialized_map):
 
     return deserialized_map
 
+
 def map_to_np(map):
     npmap = np.zeros((len(map), len(map[0])))
     for x, line in enumerate(map):
         for y, tile in enumerate(line):
             npmap[x, y] = int(tile.Content)
     return npmap
+
 
 def printMap(map):
     for i in xrange(len(map)):
@@ -68,28 +78,39 @@ def printMap(map):
                 sys.stdout.write("X")
         print ""
 
+
+def getResourceTiles(map):
+    foundTiles = []
+    for i, tileLine in enumerate(len(map)):
+        for j, tile in enumerate(tileLine):
+            tileContent = tile.Content
+            if tileContent == TileType.Resource:
+                foundTiles.append(Point(i, j))
+    return foundTiles
+
+
 def bot():
     """
     Main de votre bot.
     """
     map_json = request.form["map"]
 
-    #map_json = json.loads(encoded_map)
+    # map_json = json.loads(encoded_map)
 
-    #print map_json
+    # print map_json
 
-    #return create_move_action(Point(0,1))
+    # return create_move_action(Point(0,1))
 
     # Player info
 
-    #encoded_map = map_json.encode()
+    # encoded_map = map_json.encode()
     map_json = json.loads(map_json)
     p = map_json["Player"]
     pos = p["Position"]
     x = pos["X"]
     y = pos["Y"]
     house = p["HouseLocation"]
-    player = Player(p["Health"], p["MaxHealth"], Point(x,y),
+    player = Player(p["Health"], p["MaxHealth"], Point(x, y),
                     Point(house["X"], house["Y"]),
                     p["CarriedResources"], p["CarryingCapacity"])
 
@@ -97,7 +118,7 @@ def bot():
     serialized_map = map_json["CustomSerializedMap"]
     deserialized_map = deserialize_map(serialized_map)
 
-    #print deserialized_map
+    # print deserialized_map
     map = map_to_np(deserialized_map)
     printMap(deserialized_map)
 
@@ -114,7 +135,8 @@ def bot():
             otherPlayers.append({player_name: player_info })
     """
     # return decision
-    return create_move_action(Point(player.Position.X + 1,player.Position.Y))
+    return create_move_action(Point(player.Position.X + 1, player.Position.Y))
+
 
 @app.route("/", methods=["POST"])
 def reponse():
@@ -124,6 +146,7 @@ def reponse():
     res = bot()
     print res
     return res
+
 
 if __name__ == "__main__":
     app.run(host="0.0.0.0", port=8080)
